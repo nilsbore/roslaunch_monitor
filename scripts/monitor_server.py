@@ -32,28 +32,31 @@ class MonitorServer(object):
         # Sends the goal to the action server.
         self.client.send_goal(goal, feedback_cb=self.feedback_cb)
 
+        rospy.on_shutdown(self.cancel_cb)
         # Waits for the server to finish performing the action.
         #client.wait_for_result()
 
         # Prints out the result of executing the action
         #return client.get_result()  # A FibonacciResult
 
+    def cancel_cb(self):
+
+        if self.client is None:
+            return
+
+        rospy.loginfo("Early shutting down launch server...")
+        self.client.cancel_goal()
+        self.client.wait_for_result()
+        rospy.loginfo("Finished shutting down launch server...")
+
     def spin(self):
 
-        if not self.client.wait_for_server(timeout=rospy.Duration(0.5)):
-            rospy.loginfo("Server not reachable, quitting...")
-            return False
-
-        if rospy.is_shutdown():
-            rospy.loginfo("Shutting down launch server...")
-            self.client.cancel_goal()
-            self.client.wait_for_result()
-            print self.client.get_result()
-            rospy.loginfo("Finished shutting down launch server...")
-            return False
-        elif self.client.get_state() != actionlib.SimpleGoalState.ACTIVE and \
-             self.client.get_state() != actionlib.SimpleGoalState.PENDING:
+        if not self.client.wait_for_server(timeout=rospy.Duration(0.5)) or \
+               (self.client.get_state() != actionlib.SimpleGoalState.ACTIVE and \
+                self.client.get_state() != actionlib.SimpleGoalState.PENDING):
             rospy.loginfo("Launch server was aborted, quitting...")
+            self.client.stop_tracking_goal()
+            self.client = None
             return False
         return True
 
