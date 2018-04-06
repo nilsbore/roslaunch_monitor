@@ -1,0 +1,11 @@
+# the launch file and parameters
+string pkg
+string launch_file
+string[] parameters
+string[] values
+---
+---
+# feedback message
+string[] alive_nodes
+float32[] cpu_percent
+float32[] ram_mb
