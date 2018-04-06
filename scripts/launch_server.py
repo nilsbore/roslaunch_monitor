@@ -32,9 +32,7 @@ class LaunchMonitorServer(object):
         # a lock to mutex access to the master object
         #self.master_lock = threading.Lock()
         self._feedback_timers = {}
-        #self._feedback_timer = None
         self._parents = {}
-        #self._parent = None
         self._queued_handles = {}
         rospy.loginfo('Server %s is up', self._action_name)
 
@@ -52,16 +50,13 @@ class LaunchMonitorServer(object):
             _parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file, process_listeners=[process_listener])
             _parent.start()
             self._parents[goal_id] = _parent
-            #self._parent = _parent
             self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent))
-            #self._feedback_timer = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh))
 
         self._queued_handles = {}
 
     def cancel_cb(self, gh):
         goal_id = gh.get_goal_id().id
         rospy.loginfo('cancel roslaunch goal ' + goal_id)
-        #self.p[gh.get_goal_id()].terminate()
         self._feedback_timers.pop(goal_id).shutdown()
         self._parents.pop(goal_id).shutdown()
         gh.set_canceled()
@@ -73,7 +68,6 @@ class LaunchMonitorServer(object):
         goal_id = gh.get_goal_id().id
         rospy.loginfo('trigger roslaunch goal ' + goal_id)
 
-        #self._queued_handles.append(gh)
         self._queued_handles[goal_id] = gh
 
         while not rospy.is_shutdown() and goal_id in self._queued_handles:
@@ -84,8 +78,6 @@ class LaunchMonitorServer(object):
     def feedback_callback(self, gh, _parent, event):
 
         _feedback = roslaunch_monitor.msg.LaunchFeedback()
-        #goal_id = gh.get_goal_id().id
-        #_parent = self._parents[goal_id]
 
         try:
             pool = Pool(12) #processes=self.nbr_threads)
@@ -93,12 +85,6 @@ class LaunchMonitorServer(object):
         finally:
             pool.close()
             pool.join()
-
-        #for res, p in zip(result, self._parent.pm.procs):
-        #    print "Parent pm procs name: ", p.name
-        #    print "Parent pm procs pid: ", p.pid
-        #    print "Cpu percent: ", res[0]
-        #    print "RAM used (MB): ", 1e-6*float(res[1])
 
         _feedback.alive_nodes = [p.name for p in _parent.pm.procs]
         _feedback.cpu_percent = [r[0] for r in result]
