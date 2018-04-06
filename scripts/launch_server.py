@@ -11,8 +11,8 @@ import actionlib
 
 def get_pid_stats(pid):
     proc = psutil.Process(pid)
-    return proc.cpu_percent(0.1), proc.memory_info().rss
-    #return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
+    #return proc.cpu_percent(0.1), proc.memory_info().rss
+    return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
 
 class ProcessListener(roslaunch.pmon.ProcessListener):
 
@@ -53,7 +53,7 @@ class LaunchMonitorServer(object):
             _parent.start()
             self._parents[goal_id] = _parent
             #self._parent = _parent
-            self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh))
+            self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent))
             #self._feedback_timer = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh))
 
         self._queued_handles = {}
@@ -81,11 +81,11 @@ class LaunchMonitorServer(object):
 
         gh.set_accepted()
 
-    def feedback_callback(self, gh, event):
+    def feedback_callback(self, gh, _parent, event):
 
         _feedback = roslaunch_monitor.msg.LaunchFeedback()
-        goal_id = gh.get_goal_id().id
-        _parent = self._parents[goal_id]
+        #goal_id = gh.get_goal_id().id
+        #_parent = self._parents[goal_id]
 
         try:
             pool = Pool(12) #processes=self.nbr_threads)
