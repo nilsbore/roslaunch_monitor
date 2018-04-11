@@ -1,0 +1,6 @@
+uint8 KILL=1
+uint8 RESTART=2
+uint8 action
+string goal_id
+string node_name
+---

@@ -7,6 +7,7 @@ from multiprocessing import Pool
 import roslaunch_monitor.msg
 from functools import partial
 import actionlib
+from roslaunch_monitor.srv import NodeAction, NodeActionResponse
 #import threading
 
 def get_pid_stats(pid):
@@ -28,6 +29,7 @@ class LaunchMonitorServer(object):
             self._action_name, roslaunch_monitor.msg.LaunchAction,
             self.execute_cb, self.cancel_cb, auto_start=False)
         self._as.start()
+        self.node_service = rospy.Service('~node_action', NodeAction, self.node_action_cb)
         #self.p = {}
         # a lock to mutex access to the master object
         #self.master_lock = threading.Lock()
@@ -35,6 +37,19 @@ class LaunchMonitorServer(object):
         self._parents = {}
         self._queued_handles = {}
         rospy.loginfo('Server %s is up', self._action_name)
+
+    def node_action_cb(self, req):
+        
+        rospy.loginfo("Got callback with goal id %s and name %s", req.goal_id, req.node_name)
+        _parent = self._parents[req.goal_id]
+
+        for p in _parent.pm.procs:
+            if p.name == req.node_name:
+                rospy.loginfo("Found %s, killing...", p.name)
+                p.stop()
+                break
+
+        return NodeActionResponse() 
 
     def spin(self):
 
