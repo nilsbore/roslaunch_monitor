@@ -7,13 +7,13 @@ from multiprocessing import Pool
 import roslaunch_monitor.msg
 from functools import partial
 import actionlib
-from roslaunch_monitor.srv import NodeAction, NodeActionResponse
+from roslaunch_monitor.srv import NodeAction, NodeActionResponse, NodeActionRequest
 #import threading
 
 def get_pid_stats(pid):
     proc = psutil.Process(pid)
-    #return proc.cpu_percent(0.1), proc.memory_info().rss
-    return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
+    return proc.cpu_percent(0.1), proc.memory_info().rss
+    #return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
 
 class ProcessListener(roslaunch.pmon.ProcessListener):
 
@@ -39,17 +39,28 @@ class LaunchMonitorServer(object):
         rospy.loginfo('Server %s is up', self._action_name)
 
     def node_action_cb(self, req):
-        
+
         rospy.loginfo("Got callback with goal id %s and name %s", req.goal_id, req.node_name)
         _parent = self._parents[req.goal_id]
 
         for p in _parent.pm.procs:
             if p.name == req.node_name:
                 rospy.loginfo("Found %s, killing...", p.name)
+                if req.action == NodeActionRequest.RESTART:
+                    temp_respawn = p.respawn
+                    p.respawn = True
+                    #p.respawn_delay = 0.1
+                #with p.lock:
+                #    p.stop()
+                #    if req.action == NodeActionRequest.RESTART:
+                #        p.start()
                 p.stop()
+                #if req.action == NodeActionRequest.RESTART:
+                #    p.should_respawn = temp_respawn
+
                 break
 
-        return NodeActionResponse() 
+        return NodeActionResponse()
 
     def spin(self):
 

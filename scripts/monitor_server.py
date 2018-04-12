@@ -182,7 +182,7 @@ class MonitorCollection(object):
         
     def restart_node(self, node_name):
 
-        pass
+        self.monitor_server.node_action(node_name, NodeActionRequest.RESTART)
 
     def update_widget(self, form):
 
