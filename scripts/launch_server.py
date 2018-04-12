@@ -8,11 +8,15 @@ import roslaunch_monitor.msg
 from functools import partial
 import actionlib
 from roslaunch_monitor.srv import NodeAction, NodeActionResponse, NodeActionRequest
+from collections import Counter
 #import threading
 
 def get_pid_stats(pid):
-    proc = psutil.Process(pid)
-    return proc.cpu_percent(0.1), proc.memory_info().rss
+    try:
+        proc = psutil.Process(pid)
+        return proc.cpu_percent(0.1), proc.memory_info().rss
+    except: # (AssertionError, TypeError):
+        return 0., 0.
     #return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
 
 class ProcessListener(roslaunch.pmon.ProcessListener):
@@ -36,6 +40,7 @@ class LaunchMonitorServer(object):
         self._feedback_timers = {}
         self._parents = {}
         self._queued_handles = {}
+        self._nbr_restarts = {}
         rospy.loginfo('Server %s is up', self._action_name)
 
     def node_action_cb(self, req):
@@ -45,19 +50,16 @@ class LaunchMonitorServer(object):
 
         for p in _parent.pm.procs:
             if p.name == req.node_name:
-                rospy.loginfo("Found %s, killing...", p.name)
                 if req.action == NodeActionRequest.RESTART:
-                    temp_respawn = p.respawn
+                    rospy.loginfo("Found %s, restarting...", p.name)
                     p.respawn = True
                     #p.respawn_delay = 0.1
-                #with p.lock:
-                #    p.stop()
-                #    if req.action == NodeActionRequest.RESTART:
-                #        p.start()
-                p.stop()
-                #if req.action == NodeActionRequest.RESTART:
-                #    p.should_respawn = temp_respawn
-
+                    self._nbr_restarts[req.goal_id][p.name] += 1
+                    p.stop()
+                elif req.action == NodeActionRequest.KILL:
+                    rospy.loginfo("Found %s, killing...", p.name)
+                    p.respawn = False
+                    p.stop()
                 break
 
         return NodeActionResponse()
@@ -76,7 +78,8 @@ class LaunchMonitorServer(object):
             _parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file, process_listeners=[process_listener])
             _parent.start()
             self._parents[goal_id] = _parent
-            self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent))
+            self._nbr_restarts[goal_id] = Counter()
+            self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent, self._nbr_restarts[goal_id]))
 
         self._queued_handles = {}
 
@@ -85,6 +88,7 @@ class LaunchMonitorServer(object):
         rospy.loginfo('cancel roslaunch goal ' + goal_id)
         self._feedback_timers.pop(goal_id).shutdown()
         self._parents.pop(goal_id).shutdown()
+        self._nbr_restarts.pop(goal_id)
         gh.set_canceled()
 
     def execute_cb(self, gh):
@@ -101,7 +105,7 @@ class LaunchMonitorServer(object):
 
         gh.set_accepted()
 
-    def feedback_callback(self, gh, _parent, event):
+    def feedback_callback(self, gh, _parent, _nbr_restarts, event):
 
         _feedback = roslaunch_monitor.msg.LaunchFeedback()
 
@@ -115,6 +119,7 @@ class LaunchMonitorServer(object):
         _feedback.alive_nodes = [p.name for p in _parent.pm.procs]
         _feedback.cpu_percent = [r[0] for r in result]
         _feedback.ram_mb = [1e-6*float(r[1]) for r in result]
+        _feedback.nbr_restarts = [_nbr_restarts[p.name] for p in _parent.pm.procs]
 
         gh.publish_feedback(_feedback)
 

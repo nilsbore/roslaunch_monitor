@@ -18,7 +18,7 @@ import curses
 # encoding: utf-8
 npyscreen.DISABLE_RESIZE_SYSTEM = False
 npyscreen.FormBaseNew.ALLOW_RESIZE = True
-npyscreen.FormBaseNew.FIX_MINIMUM_SIZE_WHEN_CREATED = False 
+npyscreen.FormBaseNew.FIX_MINIMUM_SIZE_WHEN_CREATED = False # NOTE: this seems useless
 
 class MonitorServer(object):
 
@@ -149,8 +149,8 @@ class MonitorCollection(object):
         #self.title = form.add_widget_intelligent(npyscreen.TitleText, name=self.name) #, rely=4+10*nbr)
         #self.widget = form.add_widget_intelligent(MonitorWidget, name=self.name, #rely=2+6*nbr, 
         self.widget = form.add(MonitorWidget, name=self.name, #rely=2+6*nbr, 
-                               columns = 3, column_width = None, col_margin=0, row_height = 1,
-                               col_titles = ["Node name", "CPU Percent", "RAM MB"], values=[],
+                               columns = 4, column_width = None, col_margin=0, row_height = 1,
+                               col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"], values=[],
                                always_show_cursor = False, select_whole_line = True, scroll_exit=True)
         self.feedback_name = "FEEDBACK_"+str(nbr)
         form.parentApp.add_event_hander(self.feedback_name, self.ev_test_event_handler)
@@ -184,20 +184,18 @@ class MonitorCollection(object):
 
         self.monitor_server.node_action(node_name, NodeActionRequest.RESTART)
 
-    def update_widget(self, form):
-
-        self.widget = None
-        self.widget = form.add(MonitorWidget, name=self.name, #rely=2+6*nbr, 
-                               columns = 3, column_width = None, col_margin=0, row_height = 1,
-                               col_titles = ["Node name", "CPU Percent", "RAM MB"], values=[],
-                               always_show_cursor = False, select_whole_line = True, scroll_exit=True)
-        #self.widget.set_relyx(-1, -1)
+    #def update_widget(self, form):
+    #    self.widget = None
+    #    self.widget = form.add(MonitorWidget, name=self.name, #rely=2+6*nbr, 
+    #                           columns = 4, column_width = None, col_margin=0, row_height = 1,
+    #                           col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"], values=[],
+    #                           always_show_cursor = False, select_whole_line = True, scroll_exit=True)
     
     def feedback_cb(self, msg):    
         self.widget.parent.parentApp.queue_event(FeedbackEvent(self.feedback_name, msg))
     
     def ev_test_event_handler(self, event):
-        self.widget.values = [list(v) for v in zip(event.msg.alive_nodes, event.msg.cpu_percent, event.msg.ram_mb)]
+        self.widget.values = [list(v) for v in zip(event.msg.alive_nodes, event.msg.cpu_percent, event.msg.ram_mb, event.msg.nbr_restarts)]
         self.widget.parent.display()
 
 class MonitorEvent(npyscreen.Event):

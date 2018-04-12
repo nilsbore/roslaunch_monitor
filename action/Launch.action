@@ -9,3 +9,4 @@ string[] values
 string[] alive_nodes
 float32[] cpu_percent
 float32[] ram_mb
+int32[] nbr_restarts
