@@ -121,6 +121,9 @@ class LaunchMonitorServer(object):
         _feedback.ram_mb = [1e-6*float(r[1]) for r in result]
         _feedback.nbr_restarts = [_nbr_restarts[p.name] for p in _parent.pm.procs]
 
+        #if _parent.pm.is_shutdown:
+        #    gh.set_aborted()
+
         gh.publish_feedback(_feedback)
 
 if __name__ == '__main__':

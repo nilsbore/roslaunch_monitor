@@ -79,10 +79,10 @@ class MonitorServer(object):
         if self.client is None:
             return
 
-        rospy.loginfo("Early shutting down launch server...")
+        #rospy.loginfo("Early shutting down launch server...")
         self.client.cancel_goal()
         self.client.wait_for_result()
-        rospy.loginfo("Finished shutting down launch server...")
+        #rospy.loginfo("Finished shutting down launch server...")
 
     def add_callback(self, cb):
 
@@ -93,7 +93,7 @@ class MonitorServer(object):
         if not self.client.wait_for_server(timeout=rospy.Duration(0.5)) or \
                (self.client.get_state() != actionlib.SimpleGoalState.ACTIVE and \
                 self.client.get_state() != actionlib.SimpleGoalState.PENDING):
-            rospy.loginfo("Launch server was aborted, quitting...")
+            #rospy.loginfo("Launch server was aborted, quitting...")
             self.client.stop_tracking_goal()
             self.client = None
             return False
@@ -204,13 +204,20 @@ class CancelMonitorEvent(npyscreen.Event):
         super(CancelMonitorEvent, self).__init__(name)
         self.launch_id = launch_id
 
-class MonitorLaunchServer(object):
+class MonitorLaunchNode(object):
 
     def __init__(self, app):
         
         self.node_service = rospy.Service('~monitor_launch', MonitorLaunch, self.launch_cb)
         self.node_service = rospy.Service('~cancel_launch', CancelMonitorLaunch, self.cancel_cb)
         self._app = app
+        rospy.Timer(rospy.Duration(2.), self.spin_cb)
+
+    def spin_cb(self, event):
+
+        for launch_id, m in self._app.monitors.items():
+            if not m.monitor_server.spin():
+                self._app.queue_event(CancelMonitorEvent("CANCELMONITOR", launch_id))
 
     def launch_cb(self, req):
 
@@ -245,6 +252,9 @@ class MonitorApp(npyscreen.StandardApp):
             monitor.monitor_server.cancel_cb()
             monitor.title.hidden = True
             monitor.widget.hidden = True
+            monitor.title.display()
+            monitor.widget.display()
+            #self.getForm("MAIN").display()
 
     def onStart(self):
         self.addForm("MAIN", npyscreen.FormBaseNewWithMenus, name=rospy.get_name())
@@ -256,7 +266,7 @@ class MonitorApp(npyscreen.StandardApp):
         self.nbr_monitors = 0
         rospy.on_shutdown(self.cancel_cb)
         self.getForm("MAIN").how_exited_handers[npyscreen.wgwidget.EXITED_ESCAPE]  = self.cancel_cb
-        self.server = MonitorLaunchServer(self)
+        self.node = MonitorLaunchNode(self)
 
 if __name__ == '__main__':
 
