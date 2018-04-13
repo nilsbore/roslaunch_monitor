@@ -97,17 +97,6 @@ class MonitorServer(object):
             return False
         return True
 
-#class TestForm(npyscreen.Form):
-#    
-#    def create(self):
-#        self.s  = self.add(npyscreen.TitleSlider, out_of=12, name = "Slider")
-#        self.ms2= self.add(npyscreen.TitleMultiSelect, max_height =4, value = [1,], name="Pick Several",
-#                values = ["1","2","3"], scroll_exit=True)
-#        self.ms3= self.add(npyscreen.TitleMultiSelect, max_height =4, value = [1,], name="Pick Several",
-#                values = ["1", "2", "3"], scroll_exit=True)
-#        self.mytext = self.add(npyscreen.TitleText, name = "Text:",)
-#    #    self.add_event_hander("TESTEVENT", self.ev_test_event_handler)
-
 class FeedbackEvent(npyscreen.Event):
 
     def __init__(self, name, msg):
@@ -117,22 +106,35 @@ class FeedbackEvent(npyscreen.Event):
 
 class MonitorWidget(npyscreen.GridColTitles):
 
-    #def when_value_edited(self):
-    #    self.parent.display()
-
-    #def when_cursor_moved(self):
-    #    self.parent.display()
-
-    #def when_parent_changes_value(self):
-    #    self.display()
+    def h_move_or_exit_down(self, _input):
+        
+        row, col = self.edit_cell
+        if row >= len(self.values)-1:
+            self.h_exit_down(_input)
+        else:
+            self.h_move_line_down(_input)
+    
+    def h_move_or_exit_up(self, _input):
+        
+        row, col = self.edit_cell
+        if row <= 0:
+            self.h_exit_up(_input)
+        else:
+            self.h_move_line_up(_input)
 
     def custom_print_cell(self, actual_cell, cell_display_value):
 
         pass
-    
-class MonitorCollection(object):
 
-    #_is_init = False
+    # NOTE: I'm a *KING* among coders
+    def calculate_area_needed(self):
+
+        if hasattr(self, "values") and self.values is not None:
+            return len(self.values)+3, 0
+        else:
+            return 6, 0
+
+class MonitorCollection(object):
 
     def __init__(self, form, pkg, launch_file, nbr):
 
@@ -141,30 +143,25 @@ class MonitorCollection(object):
         self.monitor_server.add_callback(self.feedback_cb)
 
         self.name = pkg+"/"+launch_file
-        #if not MonitorCollection._is_init:
-        #    self.title = form.add(npyscreen.TitleText, name=self.name, rely=1+6*nbr)
-        #    #MonitorCollection._is_init = True
-        #else:
         self.title = form.add(npyscreen.TitleText, name=self.name, editable=False) #, rely=4+10*nbr)
-        #self.title = form.add_widget_intelligent(npyscreen.TitleText, name=self.name) #, rely=4+10*nbr)
-        #self.widget = form.add_widget_intelligent(MonitorWidget, name=self.name, #rely=2+6*nbr, 
-        self.widget = form.add(MonitorWidget, name=self.name, #rely=2+6*nbr, 
+        self.widget = form.add(MonitorWidget, name=self.name, relx=2, #width=40,#rely=2+6*nbr, 
                                columns = 4, column_width = None, col_margin=0, row_height = 1,
-                               col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"], values=[],
-                               always_show_cursor = False, select_whole_line = True, scroll_exit=True)
+                               col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"], #values=[["1", "2", "3", "4"]],
+                               always_show_cursor = False, select_whole_line = True, scroll_exit=False)
         self.feedback_name = "FEEDBACK_"+str(nbr)
         form.parentApp.add_event_hander(self.feedback_name, self.ev_test_event_handler)
         self.widget.add_handlers({curses.ascii.NL:   self.handle_node,
                                   curses.ascii.CR:   self.widget.h_exit_down,
                                   curses.ascii.TAB:  self.widget.h_exit_down,
-                                  #curses.KEY_DOWN:   self.widget.h_exit_down,
-                                  #curses.KEY_UP:     self.widget.h_exit_up,
+                                  curses.KEY_DOWN:   self.widget.h_move_or_exit_down,
+                                  curses.KEY_UP:     self.widget.h_move_or_exit_up,
                                   #curses.KEY_LEFT:   self.widget.h_exit_left,
                                   #curses.KEY_RIGHT:  self.widget.h_exit_right,
                                   "^P":              self.widget.h_exit_up,
                                   "^N":              self.widget.h_exit_down,
                                   curses.ascii.ESC:  self.widget.h_exit_escape, # NOTE: this is good
                                   curses.KEY_MOUSE:  self.widget.h_exit_mouse})
+        self.widget.hidden = False
 
     def handle_node(self, event):
 
@@ -183,13 +180,6 @@ class MonitorCollection(object):
     def restart_node(self, node_name):
 
         self.monitor_server.node_action(node_name, NodeActionRequest.RESTART)
-
-    #def update_widget(self, form):
-    #    self.widget = None
-    #    self.widget = form.add(MonitorWidget, name=self.name, #rely=2+6*nbr, 
-    #                           columns = 4, column_width = None, col_margin=0, row_height = 1,
-    #                           col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"], values=[],
-    #                           always_show_cursor = False, select_whole_line = True, scroll_exit=True)
     
     def feedback_cb(self, msg):    
         self.widget.parent.parentApp.queue_event(FeedbackEvent(self.feedback_name, msg))
@@ -210,43 +200,25 @@ class MonitorApp(npyscreen.StandardApp):
 
     def cancel_cb(self):
 
-        #self.parent.parentApp.switchForm(None)
         curses.beep()
         self.switchForm(None)
 
     def add_monitor(self, event):
         
         form = self.getForm("MAIN")
-        #offset = 4+sum(4+len(m.widget.values) for m in self.monitors)
-        form.nextrely = 2+10*self.nbr_monitors #self.nextrely
-        #form.nextrely = 2
-        #form._clear_all_widgets()
-        #for m in self.monitors:
-        #    m.update_widget(form)
+        #form.nextrely = 2+10*self.nbr_monitors #self.nextrely
         self.monitors.append(MonitorCollection(form, event.pkg, event.launch_file, self.nbr_monitors))
         self.nbr_monitors += 1
-        self.nextrely = form.nextrely #+2
-        #rospy.loginfo("Nexrely: ", self.nextrely)
-        #form.display()
 
     def onStart(self):
-        #self.keypress_timeout_default = 2
         self.addForm("MAIN", npyscreen.FormBaseNewWithMenus, name=rospy.get_name())
-        #self.addForm("MAIN", npyscreen.FormMutt, name=rospy.get_name())
-        #self.addForm("MAIN", npyscreen.Form, name=rospy.get_name())
-        #self.title = self.getForm("MAIN").add(npyscreen.TitleText, name="Press ESC to exit...")
+        form = self.getForm("MAIN")
         self.dummy = self.getForm("MAIN").add(npyscreen.DummyWidget) #, rely=4+10*nbr)
         self.add_event_hander("ADDMONITOR", self.add_monitor)
         self.monitors = []
         self.nbr_monitors = 0
         rospy.on_shutdown(self.cancel_cb)
         self.getForm("MAIN").how_exited_handers[npyscreen.wgwidget.EXITED_ESCAPE]  = self.cancel_cb
-        self.nextrely = self.getForm("MAIN").nextrely#+2
-        #rospy.loginfo("Nexrely: ", self.nextrely)
-
-    #def onCleanExit(self):
-    #
-    #    npyscreen.notify_wait("Goodbye!")
 
 if __name__ == '__main__':
 
@@ -257,5 +229,6 @@ if __name__ == '__main__':
         #App.queue_event(MonitorEvent("ADDMONITOR", sys.argv[1], sys.argv[2]))
         App.queue_event(MonitorEvent("ADDMONITOR", "rfs_slam", "test_sim.launch"))
         App.queue_event(MonitorEvent("ADDMONITOR", "rfs_slam", "slam.launch"))
+        App.queue_event(MonitorEvent("ADDMONITOR", "auv_sensors", "auv_sensors.launch"))
     App.run()
 
