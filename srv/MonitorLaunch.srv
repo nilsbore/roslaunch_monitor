@@ -1,0 +1,8 @@
+# the launch file and parameters
+string pkg
+string launch_file
+string[] parameters
+string[] values
+string monitor_cfg
+---
+int32 launch_id

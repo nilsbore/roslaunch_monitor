@@ -5,6 +5,8 @@ import sys
 #from __future__ import print_function
 import roslaunch_monitor.msg
 from roslaunch_monitor.srv import NodeAction, NodeActionRequest
+from roslaunch_monitor.srv import MonitorLaunch, MonitorLaunchResponse, MonitorLaunchRequest
+from roslaunch_monitor.srv import CancelMonitorLaunch, CancelMonitorLaunchResponse, CancelMonitorLaunchRequest
 
 # Brings in the SimpleActionClient
 import actionlib
@@ -143,10 +145,10 @@ class MonitorCollection(object):
         self.monitor_server.add_callback(self.feedback_cb)
 
         self.name = pkg+"/"+launch_file
-        self.title = form.add(npyscreen.TitleText, name=self.name, editable=False) #, rely=4+10*nbr)
-        self.widget = form.add(MonitorWidget, name=self.name, relx=2, #width=40,#rely=2+6*nbr, 
+        self.title = form.add(npyscreen.TitleText, name=self.name, editable=False)
+        self.widget = form.add(MonitorWidget, name=self.name, relx=2, 
                                columns = 4, column_width = None, col_margin=0, row_height = 1,
-                               col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"], #values=[["1", "2", "3", "4"]],
+                               col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"],
                                always_show_cursor = False, select_whole_line = True, scroll_exit=False)
         self.feedback_name = "FEEDBACK_"+str(nbr)
         form.parentApp.add_event_hander(self.feedback_name, self.ev_test_event_handler)
@@ -161,7 +163,6 @@ class MonitorCollection(object):
                                   "^N":              self.widget.h_exit_down,
                                   curses.ascii.ESC:  self.widget.h_exit_escape, # NOTE: this is good
                                   curses.KEY_MOUSE:  self.widget.h_exit_mouse})
-        self.widget.hidden = False
 
     def handle_node(self, event):
 
@@ -170,7 +171,7 @@ class MonitorCollection(object):
         menu = self.widget.parent.new_menu(name=node_name)
         menu.addItem("Kill", onSelect=self.kill_node, arguments=(node_name,))
         menu.addItem("Restart", onSelect=self.restart_node, arguments=(node_name,))
-        menu.addItem("Cancel") #, onSelect=self.restart_node, arguments=(node_name,))
+        menu.addItem("Cancel")
         self.widget.parent.popup_menu(menu)
 
     def kill_node(self, node_name):
@@ -196,6 +197,34 @@ class MonitorEvent(npyscreen.Event):
         self.pkg = pkg
         self.launch_file = launch_file
 
+class CancelMonitorEvent(npyscreen.Event):
+
+    def __init__(self, name, launch_id):
+
+        super(CancelMonitorEvent, self).__init__(name)
+        self.launch_id = launch_id
+
+class MonitorLaunchServer(object):
+
+    def __init__(self, app):
+        
+        self.node_service = rospy.Service('~monitor_launch', MonitorLaunch, self.launch_cb)
+        self.node_service = rospy.Service('~cancel_launch', CancelMonitorLaunch, self.cancel_cb)
+        self._app = app
+
+    def launch_cb(self, req):
+
+        launch_id = self._app.nbr_monitors
+        self._app.queue_event(MonitorEvent("ADDMONITOR", req.pkg, req.launch_file))
+
+        return MonitorLaunchResponse(launch_id)
+    
+    def cancel_cb(self, req):
+
+        self._app.queue_event(CancelMonitorEvent("CANCELMONITOR", req.launch_id))
+
+        return CancelMonitorLaunchResponse()
+
 class MonitorApp(npyscreen.StandardApp):
 
     def cancel_cb(self):
@@ -206,19 +235,28 @@ class MonitorApp(npyscreen.StandardApp):
     def add_monitor(self, event):
         
         form = self.getForm("MAIN")
-        #form.nextrely = 2+10*self.nbr_monitors #self.nextrely
-        self.monitors.append(MonitorCollection(form, event.pkg, event.launch_file, self.nbr_monitors))
+        self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, self.nbr_monitors)
         self.nbr_monitors += 1
+
+    def cancel_monitor(self, event):
+
+        if event.launch_id in self.monitors:
+            monitor = self.monitors.pop(event.launch_id)
+            monitor.monitor_server.cancel_cb()
+            monitor.title.hidden = True
+            monitor.widget.hidden = True
 
     def onStart(self):
         self.addForm("MAIN", npyscreen.FormBaseNewWithMenus, name=rospy.get_name())
         form = self.getForm("MAIN")
-        self.dummy = self.getForm("MAIN").add(npyscreen.DummyWidget) #, rely=4+10*nbr)
+        self.dummy = form.add(npyscreen.DummyWidget)
         self.add_event_hander("ADDMONITOR", self.add_monitor)
-        self.monitors = []
+        self.add_event_hander("CANCELMONITOR", self.cancel_monitor)
+        self.monitors = {}
         self.nbr_monitors = 0
         rospy.on_shutdown(self.cancel_cb)
         self.getForm("MAIN").how_exited_handers[npyscreen.wgwidget.EXITED_ESCAPE]  = self.cancel_cb
+        self.server = MonitorLaunchServer(self)
 
 if __name__ == '__main__':
 
@@ -229,6 +267,6 @@ if __name__ == '__main__':
         #App.queue_event(MonitorEvent("ADDMONITOR", sys.argv[1], sys.argv[2]))
         App.queue_event(MonitorEvent("ADDMONITOR", "rfs_slam", "test_sim.launch"))
         App.queue_event(MonitorEvent("ADDMONITOR", "rfs_slam", "slam.launch"))
-        App.queue_event(MonitorEvent("ADDMONITOR", "auv_sensors", "auv_sensors.launch"))
+        #App.queue_event(MonitorEvent("ADDMONITOR", "auv_sensors", "auv_sensors.launch"))
     App.run()
 
