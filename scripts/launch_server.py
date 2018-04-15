@@ -40,7 +40,6 @@ class LaunchMonitorServer(object):
         self._feedback_timers = {}
         self._parents = {}
         self._queued_handles = {}
-        self._nbr_restarts = {}
         rospy.loginfo('Server %s is up', self._action_name)
 
     def node_action_cb(self, req):
@@ -54,7 +53,6 @@ class LaunchMonitorServer(object):
                     rospy.loginfo("Found %s, restarting...", p.name)
                     p.respawn = True
                     #p.respawn_delay = 0.1
-                    self._nbr_restarts[req.goal_id][p.name] += 1
                     p.stop()
                 elif req.action == NodeActionRequest.KILL:
                     rospy.loginfo("Found %s, killing...", p.name)
@@ -78,8 +76,7 @@ class LaunchMonitorServer(object):
             _parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file, process_listeners=[process_listener])
             _parent.start()
             self._parents[goal_id] = _parent
-            self._nbr_restarts[goal_id] = Counter()
-            self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent, self._nbr_restarts[goal_id]))
+            self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent))
             #gh.set_active()
             print "GH methods: ", dir(gh)
             print "AP methods: ", dir(self._as)
@@ -94,7 +91,6 @@ class LaunchMonitorServer(object):
             return
         self._feedback_timers.pop(goal_id).shutdown()
         self._parents.pop(goal_id).shutdown()
-        self._nbr_restarts.pop(goal_id)
         gh.set_canceled()
 
     def execute_cb(self, gh):
@@ -111,7 +107,7 @@ class LaunchMonitorServer(object):
 
         gh.set_accepted()
 
-    def feedback_callback(self, gh, _parent, _nbr_restarts, event):
+    def feedback_callback(self, gh, _parent, event):
 
         _feedback = roslaunch_monitor.msg.LaunchFeedback()
 
@@ -125,7 +121,7 @@ class LaunchMonitorServer(object):
         _feedback.alive_nodes = [p.name for p in _parent.pm.procs]
         _feedback.cpu_percent = [r[0] for r in result]
         _feedback.ram_mb = [1e-6*float(r[1]) for r in result]
-        _feedback.nbr_restarts = [_nbr_restarts[p.name] for p in _parent.pm.procs]
+        _feedback.nbr_restarts = [p.spawn_count-1 for p in _parent.pm.procs]
         # NOTE: maybe we can use spawn_count instead of our own nbr_restarts?
         _feedback.dead_nodes = [p.name for p in _parent.pm.dead_list]
         #deads = [(p.name, p.spawn_count) for p in self.dead_list]
