@@ -7,6 +7,7 @@ string[] values
 ---
 # feedback message
 string[] alive_nodes
+string[] dead_nodes
 float32[] cpu_percent
 float32[] ram_mb
 int32[] nbr_restarts

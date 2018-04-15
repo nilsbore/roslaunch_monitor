@@ -126,7 +126,9 @@ class MonitorWidget(npyscreen.GridColTitles):
 
     def custom_print_cell(self, actual_cell, cell_display_value):
 
-        pass
+        if len(cell_display_value) > 0 and \
+           (cell_display_value[0] == "*" or cell_display_value[0] == "-"):
+            actual_cell.color = 'DANGER'
 
     # NOTE: I'm a *KING* among coders
     def calculate_area_needed(self):
@@ -168,6 +170,8 @@ class MonitorCollection(object):
 
         row, col = self.widget.edit_cell
         node_name = self.widget.values[row][0]
+        if len(node_name) == 0 or node_name[0] == "*":
+            return
         menu = self.widget.parent.new_menu(name=node_name)
         menu.addItem("Kill", onSelect=self.kill_node, arguments=(node_name,))
         menu.addItem("Restart", onSelect=self.restart_node, arguments=(node_name,))
@@ -187,6 +191,7 @@ class MonitorCollection(object):
     
     def ev_test_event_handler(self, event):
         self.widget.values = [list(v) for v in zip(event.msg.alive_nodes, event.msg.cpu_percent, event.msg.ram_mb, event.msg.nbr_restarts)]
+        self.widget.values += [["* " + name, "-", "-", "-"] for name in event.msg.dead_nodes]
         self.widget.parent.display()
 
 class MonitorEvent(npyscreen.Event):

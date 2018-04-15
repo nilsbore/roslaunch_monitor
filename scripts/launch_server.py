@@ -14,10 +14,10 @@ from collections import Counter
 def get_pid_stats(pid):
     try:
         proc = psutil.Process(pid)
-        return proc.cpu_percent(0.1), proc.memory_info().rss
+        #return proc.cpu_percent(0.1), proc.memory_info().rss
+        return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
     except: # (AssertionError, TypeError):
         return 0., 0.
-    #return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
 
 class ProcessListener(roslaunch.pmon.ProcessListener):
 
@@ -80,6 +80,9 @@ class LaunchMonitorServer(object):
             self._parents[goal_id] = _parent
             self._nbr_restarts[goal_id] = Counter()
             self._feedback_timers[goal_id] = rospy.Timer(rospy.Duration(1), partial(self.feedback_callback, gh, _parent, self._nbr_restarts[goal_id]))
+            #gh.set_active()
+            print "GH methods: ", dir(gh)
+            print "AP methods: ", dir(self._as)
 
         self._queued_handles = {}
 
@@ -120,11 +123,19 @@ class LaunchMonitorServer(object):
         _feedback.cpu_percent = [r[0] for r in result]
         _feedback.ram_mb = [1e-6*float(r[1]) for r in result]
         _feedback.nbr_restarts = [_nbr_restarts[p.name] for p in _parent.pm.procs]
+        # NOTE: maybe we can use spawn_count instead of our own nbr_restarts?
+        _feedback.dead_nodes = [p.name for p in _parent.pm.dead_list]
+        #deads = [(p.name, p.spawn_count) for p in self.dead_list]
 
-        #if _parent.pm.is_shutdown:
-        #    gh.set_aborted()
 
         gh.publish_feedback(_feedback)
+        
+        if _parent.pm.is_shutdown:
+            #gh.set_aborted()
+            #gh.set_cancel_requested()
+            #gh.set_canceled()
+            #gh.set_aborted()
+            self.cancel_cb(gh)
 
 if __name__ == '__main__':
     rospy.init_node('launch_monitor_server')
