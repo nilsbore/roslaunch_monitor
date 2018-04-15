@@ -89,6 +89,9 @@ class LaunchMonitorServer(object):
     def cancel_cb(self, gh):
         goal_id = gh.get_goal_id().id
         rospy.loginfo('cancel roslaunch goal ' + goal_id)
+        if goal_id not in self._parents:
+            #gh.set_canceled()
+            return
         self._feedback_timers.pop(goal_id).shutdown()
         self._parents.pop(goal_id).shutdown()
         self._nbr_restarts.pop(goal_id)

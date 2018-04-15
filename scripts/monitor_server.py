@@ -172,6 +172,7 @@ class MonitorApp(npyscreen.StandardApp):
         if event.launch_id in self.monitors:
             monitor = self.monitors.pop(event.launch_id)
             #monitor.monitor_server.cancel_cb()
+            #monitor.title.label_widget.value = "* " + monitor.title.label_widget.value
             monitor.title.labelColor = 'DANGER'
             monitor.title.display()
             for row in monitor.widget.values:
