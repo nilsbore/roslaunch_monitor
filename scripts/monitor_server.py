@@ -61,6 +61,8 @@ class MonitorWidget(npyscreen.GridColTitles):
         if len(cell_display_value) > 0 and \
            (cell_display_value[0] == "*" or cell_display_value[0] == "-"):
             actual_cell.color = 'DANGER'
+        else:
+            actual_cell.color = 'DEFAULT'
 
     # NOTE: I'm a *KING* among coders
     def calculate_area_needed(self):
@@ -79,11 +81,13 @@ class MonitorCollection(object):
         self.monitor_server.add_callback(self.feedback_cb)
 
         self.name = pkg+"/"+launch_file
-        self.title = form.add(npyscreen.TitleText, name=self.name, editable=False)
-        self.widget = form.add(MonitorWidget, name=self.name, relx=2, 
-                               columns = 4, column_width = None, col_margin=0, row_height = 1,
-                               col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"],
-                               always_show_cursor = False, select_whole_line = True, scroll_exit=False)
+        self.widget, self.title = self.get_hidden_widget(form)
+        if self.widget is None:
+            self.title = form.add(npyscreen.TitleText, name=self.name, editable=False)
+            self.widget = form.add(MonitorWidget, name=self.name, relx=2, 
+                                   columns = 4, column_width = None, col_margin=0, row_height = 1,
+                                   col_titles = ["Node name", "CPU Percent", "RAM MB", "Nbr restarts"],
+                                   always_show_cursor = False, select_whole_line = True, scroll_exit=False)
         self.feedback_name = "FEEDBACK_"+str(nbr)
         form.parentApp.add_event_hander(self.feedback_name, self.ev_test_event_handler)
         self.widget.add_handlers({curses.ascii.NL:   self.handle_node,
@@ -97,6 +101,20 @@ class MonitorCollection(object):
                                   "^N":              self.widget.h_exit_down,
                                   curses.ascii.ESC:  self.widget.h_exit_escape, # NOTE: this is good
                                   curses.KEY_MOUSE:  self.widget.h_exit_mouse})
+
+    def get_hidden_widget(self, form):
+
+        for i, w in enumerate(form._widgets__):
+            if isinstance(w, npyscreen.TitleText) and w.hidden:
+                w1 = form._widgets__[i+1]
+                if isinstance(w1, MonitorWidget) and w1.hidden:
+                    w.label_widget.value = self.name
+                    w.hidden = False
+                    w1.name = self.name
+                    w1.hidden = False
+                    return w1, w
+
+        return None, None
 
     def handle_node(self, event):
 
@@ -119,9 +137,11 @@ class MonitorCollection(object):
         self.monitor_server.node_action(node_name, NodeActionRequest.RESTART)
     
     def feedback_cb(self, msg):    
+
         self.widget.parent.parentApp.queue_event(FeedbackEvent(self.feedback_name, msg))
     
     def ev_test_event_handler(self, event):
+
         self.widget.values = [list(v) for v in zip(event.msg.alive_nodes, event.msg.cpu_percent, event.msg.ram_mb, event.msg.nbr_restarts)]
         self.widget.values += [["* " + name, "-", "-", "-"] for name in event.msg.dead_nodes]
         self.widget.parent.display()
@@ -162,7 +182,7 @@ class MonitorApp(npyscreen.StandardApp):
         self.switchForm(None)
 
     def add_monitor(self, event):
-        
+
         form = self.getForm("MAIN")
         self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, self.nbr_monitors)
         self.nbr_monitors += 1
@@ -186,11 +206,16 @@ class MonitorApp(npyscreen.StandardApp):
         if event.launch_id in self.monitors:
             monitor = self.monitors.pop(event.launch_id)
             monitor.monitor_server.cancel_cb()
+            #widget = monitor.widget
+            #title = monitor.title
             monitor.title.hidden = True
+            monitor.widget.hidden = True
+            #self._hidden_widgets[title.rely] = (widget, title)
             monitor.title.display()
             monitor.widget.display()
 
     def onStart(self):
+
         self.addForm("MAIN", npyscreen.FormBaseNewWithMenus, name=rospy.get_name())
         form = self.getForm("MAIN")
         self.dummy = form.add(npyscreen.DummyWidget)
@@ -198,6 +223,7 @@ class MonitorApp(npyscreen.StandardApp):
         self.add_event_hander("CANCELMONITOR", self.cancel_monitor)
         self.add_event_hander("DEADMONITOR", self.dead_monitor)
         self.monitors = {}
+        #self._hidden_widgets = {}
         self.nbr_monitors = 0
         rospy.on_shutdown(self.cancel_cb)
         self.getForm("MAIN").how_exited_handers[npyscreen.wgwidget.EXITED_ESCAPE]  = self.cancel_cb

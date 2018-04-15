@@ -21,8 +21,12 @@ def get_pid_stats(pid):
 
 class ProcessListener(roslaunch.pmon.ProcessListener):
 
+    def __init__(self, goal_id):
+        super(ProcessListener, self).__init__()
+        self._goal_id = goal_id
+
     def process_died(self, name, exit_code):
-        rospy.logwarn("%s died with code %s", name, exit_code)
+        rospy.logwarn("Goal id %s: %s died with code %s", self._goal_id, name, exit_code)
 
 class LaunchMonitorServer(object):
 
@@ -72,7 +76,7 @@ class LaunchMonitorServer(object):
 
             cli_args = [goal.pkg, goal.launch_file]
             roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(cli_args)
-            process_listener = ProcessListener()
+            process_listener = ProcessListener(goal_id)
             _parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file, process_listeners=[process_listener])
             _parent.start()
             self._parents[goal_id] = _parent
@@ -125,7 +129,6 @@ class LaunchMonitorServer(object):
         # NOTE: maybe we can use spawn_count instead of our own nbr_restarts?
         _feedback.dead_nodes = [p.name for p in _parent.pm.dead_list]
         #deads = [(p.name, p.spawn_count) for p in self.dead_list]
-
 
         gh.publish_feedback(_feedback)
         
