@@ -23,6 +23,21 @@ class FeedbackEvent(npyscreen.Event):
         super(FeedbackEvent, self).__init__(name)
         self.msg = msg
 
+class MonitorEvent(npyscreen.Event):
+
+    def __init__(self, name, pkg, launch_file):
+
+        super(MonitorEvent, self).__init__(name)
+        self.pkg = pkg
+        self.launch_file = launch_file
+
+class CancelMonitorEvent(npyscreen.Event):
+
+    def __init__(self, name, launch_id):
+
+        super(CancelMonitorEvent, self).__init__(name)
+        self.launch_id = launch_id
+
 class MonitorWidget(npyscreen.GridColTitles):
 
     def h_move_or_exit_down(self, _input):
@@ -111,21 +126,6 @@ class MonitorCollection(object):
         self.widget.values += [["* " + name, "-", "-", "-"] for name in event.msg.dead_nodes]
         self.widget.parent.display()
 
-class MonitorEvent(npyscreen.Event):
-
-    def __init__(self, name, pkg, launch_file):
-
-        super(MonitorEvent, self).__init__(name)
-        self.pkg = pkg
-        self.launch_file = launch_file
-
-class CancelMonitorEvent(npyscreen.Event):
-
-    def __init__(self, name, launch_id):
-
-        super(CancelMonitorEvent, self).__init__(name)
-        self.launch_id = launch_id
-
 class MonitorLaunchNode(object):
 
     def __init__(self, app):
@@ -139,7 +139,7 @@ class MonitorLaunchNode(object):
 
         for launch_id, m in self._app.monitors.items():
             if not m.monitor_server.spin():
-                self._app.queue_event(CancelMonitorEvent("CANCELMONITOR", launch_id))
+                self._app.queue_event(CancelMonitorEvent("DEADMONITOR", launch_id))
 
     def launch_cb(self, req):
 
@@ -167,16 +167,27 @@ class MonitorApp(npyscreen.StandardApp):
         self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, self.nbr_monitors)
         self.nbr_monitors += 1
 
+    def dead_monitor(self, event):
+
+        if event.launch_id in self.monitors:
+            monitor = self.monitors.pop(event.launch_id)
+            #monitor.monitor_server.cancel_cb()
+            monitor.title.labelColor = 'DANGER'
+            monitor.title.display()
+            for row in monitor.widget.values:
+                if len(row[0]) > 0 and row[0][0] != "*":
+                    row[0] = "* " + row[0]
+                    row[1] = row[2] = row[3] = "-"
+            monitor.widget.display()
+
     def cancel_monitor(self, event):
 
         if event.launch_id in self.monitors:
             monitor = self.monitors.pop(event.launch_id)
             monitor.monitor_server.cancel_cb()
             monitor.title.hidden = True
-            monitor.widget.hidden = True
             monitor.title.display()
             monitor.widget.display()
-            #self.getForm("MAIN").display()
 
     def onStart(self):
         self.addForm("MAIN", npyscreen.FormBaseNewWithMenus, name=rospy.get_name())
@@ -184,6 +195,7 @@ class MonitorApp(npyscreen.StandardApp):
         self.dummy = form.add(npyscreen.DummyWidget)
         self.add_event_hander("ADDMONITOR", self.add_monitor)
         self.add_event_hander("CANCELMONITOR", self.cancel_monitor)
+        self.add_event_hander("DEADMONITOR", self.dead_monitor)
         self.monitors = {}
         self.nbr_monitors = 0
         rospy.on_shutdown(self.cancel_cb)
