@@ -4,6 +4,8 @@ from roslaunch_monitor.srv import NodeAction, NodeActionRequest
 from roslaunch_monitor.srv import MonitorLaunch, MonitorLaunchResponse, MonitorLaunchRequest
 from roslaunch_monitor.srv import CancelMonitorLaunch, CancelMonitorLaunchResponse, CancelMonitorLaunchRequest
 from roslaunch_monitor.launch_server_client import LaunchServerClient
+from roslaunch_monitor.monitor_config_server import MonitorConfigServer
+import json
 
 import npyscreen
 import curses
@@ -22,11 +24,12 @@ class FeedbackEvent(npyscreen.Event):
 
 class MonitorEvent(npyscreen.Event):
 
-    def __init__(self, name, pkg, launch_file):
+    def __init__(self, name, pkg, launch_file, launch_cfg={}):
 
         super(MonitorEvent, self).__init__(name)
         self.pkg = pkg
         self.launch_file = launch_file
+        self.launch_cfg = launch_cfg
 
 class CancelMonitorEvent(npyscreen.Event):
 
@@ -71,7 +74,10 @@ class MonitorWidget(npyscreen.GridColTitles):
 
 class MonitorCollection(object):
 
-    def __init__(self, form, pkg, launch_file, nbr):
+    def __init__(self, form, pkg, launch_file, monitor_cfg, nbr):
+
+        self.config_server = MonitorConfigServer(monitor_cfg)
+        self.monitor_strs = self.config_server.get_monitor_strs()
 
         self.monitor_server = LaunchServerClient()
         self.monitor_server.launch(pkg, launch_file)
@@ -139,9 +145,23 @@ class MonitorCollection(object):
     
     def ev_test_event_handler(self, event):
 
-        self.widget.values = [list(v) for v in zip(event.msg.alive_nodes, event.msg.cpu_percent, event.msg.ram_mb, event.msg.nbr_restarts)]
+        cpu_percent = ["{:.2f}".format(v) for v in event.msg.cpu_percent]
+        ram_mb = ["{:.2f}".format(v) for v in event.msg.ram_mb]
+        nbr_restarts = ["{:d}".format(v) for v in event.msg.nbr_restarts]
+        self.widget.values = [list(v) for v in zip(event.msg.alive_nodes, cpu_percent, ram_mb, nbr_restarts)]
+        for i, row in enumerate(self.widget.values):
+            name = self.config_server.base_name(row[0])
+            if name is not None and name in self.monitor_strs:
+                self.widget.values[i] = [u+v for u,v in zip(row, self.monitor_strs[name])]
+
         self.widget.values += [["* " + name, "-", "-", "-"] for name in event.msg.dead_nodes]
         self.widget.parent.display()
+        
+        self.config_server.add_meas(event.msg)
+        for node_name in event.msg.alive_nodes:
+            action, delay = self.config_server.cfg_action(node_name)
+            if action is not None:
+                self.monitor_server.node_action(node_name, action)
 
 class MonitorLaunchNode(object):
 
@@ -161,7 +181,8 @@ class MonitorLaunchNode(object):
     def launch_cb(self, req):
 
         launch_id = self._app.nbr_monitors
-        self._app.queue_event(MonitorEvent("ADDMONITOR", req.pkg, req.launch_file))
+        monitor_cfg = json.loads(req.monitor_cfg)
+        self._app.queue_event(MonitorEvent("ADDMONITOR", req.pkg, req.launch_file, monitor_cfg))
 
         return MonitorLaunchResponse(launch_id)
     
@@ -181,7 +202,7 @@ class MonitorApp(npyscreen.StandardApp):
     def add_monitor(self, event):
 
         form = self.getForm("MAIN")
-        self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, self.nbr_monitors)
+        self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, event.launch_cfg, self.nbr_monitors)
         self.nbr_monitors += 1
 
     def dead_monitor(self, event):
