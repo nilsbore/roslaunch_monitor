@@ -27,7 +27,7 @@ class NodeActionCondition(object):
         if "window" in pars:
             self.window = pars["window"]
         else:
-            self.window = 1
+            self.window = 10
         if "delay" in pars:
             self.delay = pars["delay"]
         else:
@@ -44,8 +44,9 @@ class NodeActionCondition(object):
 
 class NodeConfig(object):
 
-    def __init__(self, name, cfg):
+    def __init__(self, node_name, cfg):
 
+        self.node_name = node_name
         self.cfg = [NodeActionCondition(c) for c in cfg]
         self.cfg.sort(key=lambda c: c.action == "RESTART")
         self.nbr_restarts = 0
@@ -73,6 +74,7 @@ class NodeConfig(object):
 
         for c in self.cfg:
             if self.count > c.window and self.values[c.condition] > c.limit:
+                rospy.loginfo("Node %s got an action after count %d and window %d", self.node_name, self.count, c.window)
                 return c.cfg_action()
 
         return None, None
