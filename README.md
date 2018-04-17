@@ -47,9 +47,9 @@ rospy.init_node('my_monitor_server')
 
 App = MonitorApp()
 
-slam_monitor_cfg = {'test_slam_node': [{'condition': 'cpu_percent', 'action': 'RESTART', 'limit': 90, 'window:': 100},
+slam_monitor_cfg = {'test_slam_node': [{'condition': 'cpu_percent', 'action': 'RESTART', 'limit': 90, 'window': 100},
                                        {'condition': 'nbr_restarts', 'action': 'KILL', 'limit': 1}]}
-sim_monitor_cfg = {'test_slam_sim_node': [{'condition': 'ram_mb', 'action': 'RESTART', 'limit': 30, 'window:': 10},
+sim_monitor_cfg = {'test_slam_sim_node': [{'condition': 'ram_mb', 'action': 'RESTART', 'limit': 30, 'window': 10},
                                           {'condition': 'nbr_restarts', 'action': 'KILL', 'limit': 10}]}
 
 App.queue_launch("rfs_slam", "test_sim.launch", sim_monitor_cfg)
