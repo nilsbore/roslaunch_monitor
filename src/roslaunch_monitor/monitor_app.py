@@ -205,6 +205,10 @@ class MonitorApp(npyscreen.StandardApp):
         self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, event.launch_cfg, self.nbr_monitors)
         self.nbr_monitors += 1
 
+    def queue_launch(self, pkg, launch_file, monitor_cfg):
+
+        self.queue_event(MonitorEvent("ADDMONITOR", pkg, launch_file, monitor_cfg))
+
     def dead_monitor(self, event):
 
         if event.launch_id in self.monitors:

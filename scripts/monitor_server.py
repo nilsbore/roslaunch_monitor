@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import rospy
-from roslaunch_monitor.monitor_app import MonitorApp, MonitorEvent
+from roslaunch_monitor.monitor_app import MonitorApp
 import sys
 
 if __name__ == '__main__':
@@ -14,8 +14,8 @@ if __name__ == '__main__':
                                                {'condition': 'nbr_restarts', 'action': 'KILL', 'limit': 1}]}
         sim_monitor_cfg = {'test_slam_sim_node': [{'condition': 'ram_mb', 'action': 'RESTART', 'limit': 30, 'window:': 10},
                                                   {'condition': 'nbr_restarts', 'action': 'KILL', 'limit': 10}]}
-        App.queue_event(MonitorEvent("ADDMONITOR", "rfs_slam", "test_sim.launch", sim_monitor_cfg))
-        App.queue_event(MonitorEvent("ADDMONITOR", "rfs_slam", "slam.launch", slam_monitor_cfg))
+        App.queue_launch("rfs_slam", "test_sim.launch", sim_monitor_cfg)
+        App.queue_launch("rfs_slam", "slam.launch", slam_monitor_cfg)
         #App.queue_event(MonitorEvent("ADDMONITOR", "auv_sensors", "auv_sensors.launch"))
     App.run()
 
