@@ -1,5 +1,5 @@
 # roslaunch_monitor
-Provides a roslaunch server than be invoked by actionlib, and that monitors CPU and RAM usage
+Provides a roslaunch server that can be invoked by actionlib, and that monitors CPU and RAM usage
 
 ## Usage
 
@@ -47,7 +47,7 @@ rospy.init_node('my_monitor_server')
 
 App = MonitorApp()
 
-slam_monitor_cfg = {'test_slam_node': [{'condition': 'ram_mb', 'action': 'RESTART', 'limit': 90, 'window:': 100},
+slam_monitor_cfg = {'test_slam_node': [{'condition': 'cpu_percent', 'action': 'RESTART', 'limit': 90, 'window:': 100},
                                        {'condition': 'nbr_restarts', 'action': 'KILL', 'limit': 1}]}
 sim_monitor_cfg = {'test_slam_sim_node': [{'condition': 'ram_mb', 'action': 'RESTART', 'limit': 30, 'window:': 10},
                                           {'condition': 'nbr_restarts', 'action': 'KILL', 'limit': 10}]}
