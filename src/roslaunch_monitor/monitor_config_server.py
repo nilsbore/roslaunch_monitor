@@ -24,10 +24,12 @@ class NodeActionCondition(object):
         self.condition = pars["condition"]
         self.limit = pars["limit"]
         self.action = pars["action"]
+
         if "window" in pars:
             self.window = pars["window"]
         else:
-            self.window = 10
+            self.window = 1
+
         if "delay" in pars:
             self.delay = pars["delay"]
         else:
@@ -74,7 +76,7 @@ class NodeConfig(object):
 
         for c in self.cfg:
             if self.count > c.window and self.values[c.condition] > c.limit:
-                rospy.loginfo("Node %s got an action after count %d and window %d", self.node_name, self.count, c.window)
+                #rospy.loginfo("Node %s got an action after count %d and window %d and delay %f", self.node_name, self.count, c.window, c.delay)
                 return c.cfg_action()
 
         return None, None
