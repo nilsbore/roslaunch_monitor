@@ -3,6 +3,10 @@ Provides a roslaunch server that can be invoked by actionlib, and that monitors 
 
 ![User interface](https://raw.githubusercontent.com/nilsbore/roslaunch_monitor/master/example/roslaunch_monitor.png)
 
+## Dependencies
+
+The interface requires npyscreen: `sudo pip install npyscreen`
+
 ## Usage
 
 There are three ways of using the monitor server.
