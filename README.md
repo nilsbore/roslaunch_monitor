@@ -12,7 +12,7 @@ rosrun roslaunch_monitor launch_server.py
 ### First way: same as roslaunch
 
 ```
-rosrun roslaunch_monitor monitor_server.py my_pkg my_file.launch
+rosrun roslaunch_monitor monitor_server.py my_pkg my_file.launch my_parameter:=42
 ```
 
 ### Second way: using the service
@@ -24,8 +24,8 @@ running, we can call the service:
 ```
 rosservice call /monitor_server/monitor_launch "pkg: 'my_pkg'
 launch_file: 'my_file.launch'                                                                           
-parameters: ['']
-values: ['']
+parameters: ['my_parameter']
+values: ['42']
 monitor_cfg: ''" 
 ```
 The service will return the `launch_id` value, which we may keep
