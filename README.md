@@ -1,6 +1,8 @@
 # roslaunch_monitor
 Provides a roslaunch server that can be invoked by actionlib, and that monitors CPU and RAM usage
 
+![User interface](https://raw.githubusercontent.com/nilsbore/roslaunch_monitor/master/example/roslaunch_monitor.png)
+
 ## Usage
 
 There are three ways of using the monitor server.
