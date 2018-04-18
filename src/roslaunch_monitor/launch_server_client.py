@@ -33,7 +33,7 @@ class LaunchServerClient(object):
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
-    def launch(self, pkg, launch_file):
+    def launch(self, pkg, launch_file, parameters, values):
         # Creates the SimpleActionClient, passing the type of the action
         # (FibonacciAction) to the constructor.
         self.client = actionlib.SimpleActionClient('/launch_monitor_server', roslaunch_monitor.msg.LaunchAction)
@@ -43,7 +43,7 @@ class LaunchServerClient(object):
         self.client.wait_for_server()
 
         # Creates a goal to send to the action server.
-        goal = roslaunch_monitor.msg.LaunchGoal(pkg=pkg, launch_file=launch_file)
+        goal = roslaunch_monitor.msg.LaunchGoal(pkg=pkg, launch_file=launch_file, parameters=parameters, values=values)
 
         # Sends the goal to the action server.
         self.client.send_goal(goal, feedback_cb=self.feedback_cb)

@@ -24,12 +24,15 @@ class FeedbackEvent(npyscreen.Event):
 
 class MonitorEvent(npyscreen.Event):
 
-    def __init__(self, name, pkg, launch_file, launch_cfg={}):
+    def __init__(self, name, pkg, launch_file, launch_cfg={},
+                 parameters=[], values=[]):
 
         super(MonitorEvent, self).__init__(name)
         self.pkg = pkg
         self.launch_file = launch_file
         self.launch_cfg = launch_cfg
+        self.parameters = parameters
+        self.values = values
 
 class CancelMonitorEvent(npyscreen.Event):
 
@@ -74,13 +77,14 @@ class MonitorWidget(npyscreen.GridColTitles):
 
 class MonitorCollection(object):
 
-    def __init__(self, form, pkg, launch_file, monitor_cfg, nbr):
+    def __init__(self, form, pkg, launch_file, monitor_cfg,
+                       parameters, values, nbr):
 
         self.config_server = MonitorConfigServer(monitor_cfg)
         self.monitor_strs = self.config_server.get_monitor_strs()
 
         self.monitor_server = LaunchServerClient()
-        self.monitor_server.launch(pkg, launch_file)
+        self.monitor_server.launch(pkg, launch_file, parameters, values)
         self.monitor_server.add_callback(self.feedback_cb)
 
         self.name = pkg+"/"+launch_file
@@ -181,7 +185,10 @@ class MonitorLaunchNode(object):
     def launch_cb(self, req):
 
         launch_id = self._app.nbr_monitors
-        monitor_cfg = json.loads(req.monitor_cfg)
+        if len(req.monitor_cfg):
+            monitor_cfg = json.loads(req.monitor_cfg)
+        else:
+            monitor_cfg = {}
         self._app.queue_event(MonitorEvent("ADDMONITOR", req.pkg, req.launch_file, monitor_cfg))
 
         return MonitorLaunchResponse(launch_id)
@@ -202,12 +209,13 @@ class MonitorApp(npyscreen.StandardApp):
     def add_monitor(self, event):
 
         form = self.getForm("MAIN")
-        self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, event.launch_cfg, self.nbr_monitors)
+        self.monitors[self.nbr_monitors] = MonitorCollection(form, event.pkg, event.launch_file, event.launch_cfg,
+                                                             event.parameters, event.values, self.nbr_monitors)
         self.nbr_monitors += 1
 
-    def queue_launch(self, pkg, launch_file, monitor_cfg):
+    def queue_launch(self, pkg, launch_file, monitor_cfg={}, parameters=[], values=[]):
 
-        self.queue_event(MonitorEvent("ADDMONITOR", pkg, launch_file, monitor_cfg))
+        self.queue_event(MonitorEvent("ADDMONITOR", pkg, launch_file, monitor_cfg, parameters, values))
 
     def dead_monitor(self, event):
 
