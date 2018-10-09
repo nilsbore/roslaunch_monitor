@@ -48,6 +48,8 @@ class LaunchMonitorServer(object):
     def node_action_cb(self, req):
 
         rospy.loginfo("Got callback with goal id %s and name %s", req.goal_id, req.node_name)
+        if req.goal_id not in self._parents:
+            return NodeActionResponse()
         _parent = self._parents[req.goal_id]
 
         for p in _parent.pm.procs:
