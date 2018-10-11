@@ -46,11 +46,11 @@ import rospy
 from qt_gui_py_common.worker_thread import WorkerThread
 from rqt_py_common.extended_combo_box import ExtendedComboBox
 from rqt_py_common.rqt_roscomm_util import RqtRoscommUtil
-from roslaunch_monitor.publisher_tree_widget import PublisherTreeWidget
+from roslaunch_monitor.launch_tree_widget import LaunchTreeWidget
 
 
 # main class inherits from the ui window class
-class PublisherWidget(QWidget):
+class LaunchWidget(QWidget):
     add_launch = Signal(str, str, str, bool)
     change_launch = Signal(int, str, str, str, object)
     #publish_once = Signal(int)
@@ -58,13 +58,13 @@ class PublisherWidget(QWidget):
     clean_up_launches = Signal()
 
     def __init__(self, parent=None):
-        super(PublisherWidget, self).__init__(parent)
+        super(LaunchWidget, self).__init__(parent)
         self._topic_dict = {}
         self._update_thread = WorkerThread(self._update_thread_run, self._update_finished)
 
         self._rospack = rospkg.RosPack()
         ui_file = os.path.join(self._rospack.get_path('roslaunch_monitor'), 'resource', 'rqt_monitor_plugin.ui')
-        loadUi(ui_file, self, {'ExtendedComboBox': ExtendedComboBox, 'PublisherTreeWidget': PublisherTreeWidget})
+        loadUi(ui_file, self, {'ExtendedComboBox': ExtendedComboBox, 'LaunchTreeWidget': LaunchTreeWidget})
         self.refresh_button.setIcon(QIcon.fromTheme('view-refresh'))
         self.refresh_button.clicked.connect(self.refresh_combo_boxes)
         self.add_launch_button.setIcon(QIcon.fromTheme('add'))
@@ -73,10 +73,10 @@ class PublisherWidget(QWidget):
 
         self.refresh_combo_boxes()
 
-        self.publisher_tree_widget.model().item_value_changed.connect(self.change_launch)
-        self.publisher_tree_widget.remove_publisher.connect(self.remove_launch)
+        self.launch_tree_widget.model().item_value_changed.connect(self.change_launch)
+        self.launch_tree_widget.remove_publisher.connect(self.remove_launch)
         #self.publisher_tree_widget.publish_once.connect(self.publish_once)
-        self.remove_launch_button.clicked.connect(self.publisher_tree_widget.remove_selected_publishers)
+        self.remove_launch_button.clicked.connect(self.launch_tree_widget.remove_selected_publishers)
         self.clear_button.clicked.connect(self.clean_up_launches)
 
     def shutdown_plugin(self):

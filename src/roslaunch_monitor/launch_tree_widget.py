@@ -34,17 +34,17 @@ from python_qt_binding.QtCore import Signal, Slot
 from python_qt_binding.QtGui import QIcon
 from python_qt_binding.QtWidgets import QAction
 
-from roslaunch_monitor.publisher_tree_model import PublisherTreeModel
+from roslaunch_monitor.launch_tree_model import LaunchTreeModel
 from rqt_py_common.message_tree_widget import MessageTreeWidget
 from rqt_py_common.item_delegates import SpinBoxDelegate
 
-class PublisherTreeWidget(MessageTreeWidget):
+class LaunchTreeWidget(MessageTreeWidget):
     remove_publisher = Signal(int)
     #publish_once = Signal(int)
 
     def __init__(self, parent=None):
-        super(PublisherTreeWidget, self).__init__(parent)
-        self.setModel(PublisherTreeModel(self))
+        super(LaunchTreeWidget, self).__init__(parent)
+        self.setModel(LaunchTreeModel(self))
         self._action_remove_publisher = QAction(QIcon.fromTheme('remove'), 'Remove Selected', self)
         self._action_remove_publisher.triggered[bool].connect(self._handle_action_remove_publisher)
         #self._action_publish_once = QAction(QIcon.fromTheme('media-playback-start'), 'Publish Selected Once', self)
@@ -63,7 +63,7 @@ class PublisherTreeWidget(MessageTreeWidget):
             menu.addAction(self._action_remove_publisher)
             #menu.addAction(self._action_publish_once)
         # let super class add actions
-        super(PublisherTreeWidget, self)._context_menu_add_actions(menu, pos)
+        super(LaunchTreeWidget, self)._context_menu_add_actions(menu, pos)
 
     def _handle_action_remove_publisher(self, checked):
         self.remove_selected_publishers()

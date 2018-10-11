@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PublisherWidget</class>
- <widget class="QWidget" name="PublisherWidget">
+ <class>LaunchWidget</class>
+ <widget class="QWidget" name="LaunchWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -173,7 +173,7 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2"/>
    </item>
    <item>
-    <widget class="PublisherTreeWidget" name="publisher_tree_widget">
+    <widget class="LaunchTreeWidget" name="launch_tree_widget">
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
      </property>
@@ -203,9 +203,9 @@
    <header>rqt_py_common.extended_combo_box</header>
   </customwidget>
   <customwidget>
-   <class>PublisherTreeWidget</class>
+   <class>LaunchTreeWidget</class>
    <extends>QTreeView</extends>
-   <header>roslaunch_monitor.publisher_tree_widget</header>
+   <header>roslaunch_monitor.launch_tree_widget</header>
   </customwidget>
  </customwidgets>
  <resources/>

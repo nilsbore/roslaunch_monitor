@@ -42,7 +42,7 @@ import roslib
 import rospy
 import genpy
 from rqt_gui_py.plugin import Plugin
-from roslaunch_monitor.publisher_widget import PublisherWidget
+from roslaunch_monitor.launch_widget import LaunchWidget
 from rqt_py_common.topic_helpers import get_field_type
 
 from roslaunch_monitor.srv import NodeAction, NodeActionRequest
@@ -57,7 +57,7 @@ class RQTMonitorPlugin(Plugin):
         self.setObjectName('RQTMonitorPlugin')
 
         # create widget
-        self._widget = PublisherWidget()
+        self._widget = LaunchWidget()
         self._widget.add_launch.connect(self.add_launch)
         self._widget.change_launch.connect(self.change_launch)
         #self._widget.publish_once.connect(self.publish_once)
@@ -91,7 +91,7 @@ class RQTMonitorPlugin(Plugin):
     @Slot(int)
     def feedback_received(self, launch_id):
         #print "Dir:", dir(self.context)
-        self._widget.publisher_tree_widget.model().feedback_received(self._launches[launch_id])
+        self._widget.launch_tree_widget.model().feedback_received(self._launches[launch_id])
 
     @Slot(int, str, str, str, object)
     def change_launch(self, launch_id, package_name, column_name, new_value, setter_callback):
@@ -146,7 +146,7 @@ class RQTMonitorPlugin(Plugin):
         self._launches[launch_info['launch_id']] = launch_info
         #self._timeout_mapper.setMapping(launch_info['timer'], publisher_info['publisher_id'])
 
-        self._widget.publisher_tree_widget.model().add_launch(launch_info)
+        self._widget.launch_tree_widget.model().add_launch(launch_info)
 
     #@Slot(int)
     #def publish_once(self, publisher_id):
@@ -184,7 +184,7 @@ class RQTMonitorPlugin(Plugin):
             self._add_launch(launch)
 
     def clean_up_launches(self):
-        self._widget.publisher_tree_widget.model().clear()
+        self._widget.launch_tree_widget.model().clear()
         for launch_info in self._launches.values():
             #publisher_info['publisher'].unregister()
             pass

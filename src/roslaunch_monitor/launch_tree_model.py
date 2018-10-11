@@ -37,12 +37,12 @@ from python_qt_binding.QtGui import QStandardItem, QIcon, QColor
 from rqt_py_common.message_tree_model import MessageTreeModel
 from rqt_py_common.data_items import ReadonlyItem, CheckableItem
 
-class PublisherTreeModel(MessageTreeModel):
+class LaunchTreeModel(MessageTreeModel):
     _column_names = ['package', 'file', 'CPU(%)', 'RAM(MB)', 'restarts']
     item_value_changed = Signal(int, str, str, str, object)
 
     def __init__(self, parent=None):
-        super(PublisherTreeModel, self).__init__(parent)
+        super(LaunchTreeModel, self).__init__(parent)
         self._column_index = {}
         for column_name in self._column_names:
             self._column_index[column_name] = len(self._column_index)
@@ -52,7 +52,7 @@ class PublisherTreeModel(MessageTreeModel):
         self.itemChanged.connect(self.handle_item_changed)
 
     def clear(self):
-        super(PublisherTreeModel, self).clear()
+        super(LaunchTreeModel, self).clear()
         self.setHorizontalHeaderLabels(self._column_names)
 
     def get_launch_ids(self, index_list):
