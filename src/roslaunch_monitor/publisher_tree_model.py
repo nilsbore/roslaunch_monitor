@@ -97,7 +97,7 @@ class PublisherTreeModel(MessageTreeModel):
         #top_level_row_number = self.remove_launch(launch_info['launch_id'])
         #self.add_launch(launch_info, top_level_row_number)
         #return
-        
+
         package_name = launch_info['package_name']
         launch_id = launch_info['launch_id']
         user_data = {'launch_id': launch_info['launch_id']}
@@ -109,53 +109,25 @@ class PublisherTreeModel(MessageTreeModel):
             }
             item = self.item(top_level_row_number)
             if item is not None and item.isCheckable() and item._user_data['launch_id'] == launch_id:
-                if not self._item_change_lock.acquire(False):
-                    #qDebug('PublisherTreeModel.handle_item_changed(): could not acquire lock')
-                    return
-                count = 0
+                #if not self._item_change_lock.acquire(False):
+                #    #qDebug('PublisherTreeModel.handle_item_changed(): could not acquire lock')
+                #    print "Could not get item lock..."
+                #    return
+                #count = 0
+                #item.setEditable(True)
+                print "Updating item..."
+                if self.item(top_level_row_number).hasChildren():
+                    self.item(top_level_row_number).removeRows(0, self.item(top_level_row_number).rowCount())
                 for node, cpu, ram, restarts in zip(launch_info['nodes'], launch_info['cpu'],
                                                     launch_info['ram'], launch_info['restarts']):
-                    print "Adding node: ", node
                     row = []
                     for item in self._get_data_items_for_path(package_name, node, cpu, ram, restarts, **kwargs):
                         item._path = package_name
                         item._user_data = kwargs.get('user_data', None)
                         row.append(item)
-                    item.appendRow(row)
-                    #self.item_value_changed.emit(item._user_data['launch_id'], package_name, "package_name", row, item.appendRow)
-                    #item.emitDataChanged()
-                    count += 1
-                
-                item.setRowCount(item.rowCount() + count)
-                self.itemChanged.emit(item)
-
-                # release lock
-                self._item_change_lock.release()
-                #for item2 in row:
-                #    self.itemChanged.emit(item2)
-
-                #item.setChild(row)
-                #item.insertRow(count, row)
-                #self.insertRow(top_level_row_number, row)
-
-                print dir(item)
-                #item.setSelectable(True)
-                #self.itemChanged.emit(item)
-                #item.emitDataChanged()
-                #self.layoutChanged.emit()
-                #self.setRowCount(10)
-                #self.childEvent()
-                print dir(self)
-                #self.expand(top_level_row_number)
-                print item.hasChildren()
-                print item.rowCount()
-                #item.itemChanged(item)
-                #item.itemChanged.emit()
-                #self.itemChanged.emit(item)
-                #self.cellChanged.emit(top_level_row_number, 0)
-                #self.expand(top_level_row_number)
-
-            #self.handle_item_changed(item)
+                    self.item(top_level_row_number).appendRow(row)
+                    #item.appendRow(row)
+                #self._item_change_lock.release()
 
     def add_launch(self, launch_info, top_level_row_number=None):
         # recursively create widget items for the message's slots
@@ -192,11 +164,13 @@ class PublisherTreeModel(MessageTreeModel):
 
         print parent_row[0].hasChildren()
         print parent_row[0].rowCount()
+        print parent_row[0].text()
 
         # fill tree widget columns of top level item
         if launch_info['enabled']:
             parent_row[self._column_index['package']].setCheckState(Qt.Checked)
             #publisher_info['timer'].stop()
+        parent_row[0].emitDataChanged()
 
         #top_level_row[self._column_index['rate']].setText(str(publisher_info['rate']))
 

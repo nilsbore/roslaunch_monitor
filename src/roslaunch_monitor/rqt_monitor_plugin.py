@@ -93,6 +93,7 @@ class RQTMonitorPlugin(Plugin):
 
     @Slot(int)
     def feedback_received(self, launch_id):
+        #print "Dir:", dir(self.context)
         self._widget.publisher_tree_widget.model().feedback_received(self._launches[launch_id])
 
     @Slot(int, str, str, str, object)
@@ -112,6 +113,12 @@ class RQTMonitorPlugin(Plugin):
                 rospy.loginfo("Not Checked!")
                 self._launches[launch_id]['launch_client'].cancel_cb()
                 self._launches[launch_id]['launch_client'] = None
+                self._launches[launch_id]['nodes'] = []
+                self._launches[launch_id]['cpu'] = []
+                self._launches[launch_id]['ram'] = []
+                self._launches[launch_id]['restarts'] = []
+                self.feedback_received(launch_id)
+                #self.feedback_received_sig.emit(launch_id)
 
     @Slot(str, str, str, bool)
     def add_launch(self, package_name, file_name, arguments, enabled):
