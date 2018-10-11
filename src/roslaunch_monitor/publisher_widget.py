@@ -53,7 +53,7 @@ from roslaunch_monitor.publisher_tree_widget import PublisherTreeWidget
 class PublisherWidget(QWidget):
     add_launch = Signal(str, str, str, bool)
     change_launch = Signal(int, str, str, str, object)
-    publish_once = Signal(int)
+    #publish_once = Signal(int)
     remove_launch = Signal(int)
     clean_up_launches = Signal()
 
@@ -75,7 +75,7 @@ class PublisherWidget(QWidget):
 
         self.publisher_tree_widget.model().item_value_changed.connect(self.change_launch)
         self.publisher_tree_widget.remove_publisher.connect(self.remove_launch)
-        self.publisher_tree_widget.publish_once.connect(self.publish_once)
+        #self.publisher_tree_widget.publish_once.connect(self.publish_once)
         self.remove_launch_button.clicked.connect(self.publisher_tree_widget.remove_selected_publishers)
         self.clear_button.clicked.connect(self.clean_up_launches)
 

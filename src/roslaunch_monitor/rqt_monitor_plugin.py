@@ -60,7 +60,7 @@ class RQTMonitorPlugin(Plugin):
         self._widget = PublisherWidget()
         self._widget.add_launch.connect(self.add_launch)
         self._widget.change_launch.connect(self.change_launch)
-        self._widget.publish_once.connect(self.publish_once)
+        #self._widget.publish_once.connect(self.publish_once)
         self._widget.remove_launch.connect(self.remove_launch)
         self._widget.clean_up_launches.connect(self.clean_up_launches)
         self.feedback_received_sig.connect(self.feedback_received)
@@ -70,9 +70,6 @@ class RQTMonitorPlugin(Plugin):
         #self._publishers = {}
         self._launches = {}
         self._id_counter = 0
-
-        self._timeout_mapper = QSignalMapper(self)
-        self._timeout_mapper.mapped[int].connect(self.publish_once)
 
         # add our self to the main window
         context.add_widget(self._widget)
@@ -151,14 +148,13 @@ class RQTMonitorPlugin(Plugin):
 
         self._widget.publisher_tree_widget.model().add_launch(launch_info)
 
-    @Slot(int)
-    def publish_once(self, publisher_id):
-        #publisher_info = self._publishers.get(publisher_id, None)
-        #if publisher_info is not None:
-        #    publisher_info['counter'] += 1
-        #    self._fill_message_slots(publisher_info['message_instance'], publisher_info['topic_name'], publisher_info['expressions'], publisher_info['counter'])
-        #    publisher_info['publisher'].publish(publisher_info['message_instance'])
-        pass
+    #@Slot(int)
+    #def publish_once(self, publisher_id):
+    #   publisher_info = self._publishers.get(publisher_id, None)
+    #    if publisher_info is not None:
+    #        publisher_info['counter'] += 1
+    #        self._fill_message_slots(publisher_info['message_instance'], publisher_info['topic_name'], publisher_info['expressions'], publisher_info['counter'])
+    #        publisher_info['publisher'].publish(publisher_info['message_instance'])
 
     @Slot(int)
     def remove_launch(self, launch_id):
