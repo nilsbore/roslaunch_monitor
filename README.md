@@ -69,4 +69,4 @@ App.run()
 You can also launch nodes using the RQT plugin interface as shown below.
 Note that you can not use this interface for monitoring, or for killing/restarting
 individual nodes.
-![User interface](https://raw.githubusercontent.com/nilsbore/roslaunch_monitor/rqt/example/rqt_plugin_example.png)
+![User interface](https://raw.githubusercontent.com/nilsbore/roslaunch_monitor/master/example/rqt_plugin_example.png)
