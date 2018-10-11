@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   roslaunch
   std_msgs
+  rqt_gui
 )
 
 ## System dependencies are found with CMake's conventions

@@ -1,0 +1,12 @@
+<library path="src">
+  <class name="roslaunch_monitor" type="roslaunch_monitor.rqt_monitor_plugin.RQTMonitorPlugin" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      Provides information similar to that provided in UNIX top for running ROS nodes.
+    </description>
+    <qtgui>
+      <label>Roslaunch Monitor</label>
+      <icon type="theme">utilities-system-monitor</icon> 
+      <statustip>A Python GUI plugin for running and stopping launch files.</statustip>
+    </qtgui>
+  </class>
+</library>

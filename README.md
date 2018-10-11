@@ -9,7 +9,7 @@ The interface requires npyscreen: `sudo pip install npyscreen`
 
 ## Usage
 
-There are three ways of using the monitor server.
+There are four ways of using the monitor server.
 All of the them requires first having the `launch_server` running:
 ```
 rosrun roslaunch_monitor launch_server.py
@@ -63,3 +63,10 @@ App.queue_launch("rfs_slam", "slam.launch", slam_monitor_cfg)
 
 App.run()
 ```
+
+### Fourth way: using the RQT Plugin
+
+You can also launch nodes using the RQT plugin interface as shown below.
+Note that you can not use this interface for monitoring, or for killing/restarting
+individual nodes.
+![User interface](https://raw.githubusercontent.com/nilsbore/roslaunch_monitor/rqt/example/rqt_plugin_example.png)
