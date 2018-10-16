@@ -13,8 +13,9 @@ import sys
 def get_pid_stats(pid):
     try:
         proc = psutil.Process(pid)
-        return proc.cpu_percent(0.1), proc.memory_info().rss
+        #return proc.cpu_percent(0.1), proc.memory_info().rss
         #return proc.get_cpu_percent(0.1), proc.get_memory_info().rss
+        return 0., proc.memory_info().rss
     except: # (AssertionError, TypeError):
         return 0., 0.
 
