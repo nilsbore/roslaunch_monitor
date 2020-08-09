@@ -1,3 +1,4 @@
+from __future__ import print_function
 import rospy
 import roslaunch_monitor.msg
 from roslaunch_monitor.srv import NodeAction, NodeActionRequest
@@ -30,8 +31,8 @@ class LaunchServerClient(object):
         try:
             service = rospy.ServiceProxy('/launch_monitor_server/node_action', NodeAction)
             resp = service(req)
-        except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
 
     def launch(self, pkg, launch_file, parameters, values):
         # Creates the SimpleActionClient, passing the type of the action

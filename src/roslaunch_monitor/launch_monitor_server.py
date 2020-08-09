@@ -1,3 +1,4 @@
+from __future__ import print_function
 import roslaunch
 import rospy
 import psutil
@@ -76,7 +77,7 @@ class LaunchMonitorServer(object):
             uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
             roslaunch.configure_logging(uuid)
 
-            print "Goal pars: ", goal.parameters, goal.values
+            print("Goal pars: ", goal.parameters, goal.values)
             #if goal.launch_file == "slam.launch":
             #    sys.argv.append("sensor_range:=40.0")
             for arg, val in zip(goal.parameters, goal.values):
@@ -94,8 +95,8 @@ class LaunchMonitorServer(object):
             for arg, val in zip(goal.parameters, goal.values):
                 sys.argv.pop()
             #gh.set_active()
-            print "GH methods: ", dir(gh)
-            print "AP methods: ", dir(self._as)
+            print("GH methods: ", dir(gh))
+            print("AP methods: ", dir(self._as))
 
         self._queued_handles = {}
 
